@@ -7,7 +7,7 @@
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet" />
   <style>
-    body { padding: 10px 5px; }
+    body { padding: 10px; }
     .container { max-width: 600px; }
     .input-group-text { width: 40px; justify-content: center; }
     textarea { resize: vertical; }
@@ -158,114 +158,106 @@
     document.execCommand('copy');
   });
 
- document.getElementById('copyExtraBtn').addEventListener('click', () => {
-  const extraOutput = document.getElementById('extraOutput');
-  const text = extraOutput.value;
+  document.getElementById('copyExtraBtn').addEventListener('click', () => {
+    const extraOutput = document.getElementById('extraOutput');
+    const text = extraOutput.value;
+    const lines = text.split('\n').map(line => line.trim()).filter(Boolean);
+    const labels = [];
 
-  const lines = text.split('\n').map(line => line.trim()).filter(Boolean);
+    lines.forEach(line => {
+      const [key, ...rest] = line.split(':');
+      let value = rest.join(':').trim();
+      if (value.toUpperCase() === 'N/A') return;
 
-  const labels = [];
+      if (key.toLowerCase() === 'genre') {
+        labels.push(...value.split(',').map(g => g.trim().replace(/\s+/g, '')));
+      } else if (key.toLowerCase() === 'type') {
+        labels.push(value);
+      } else if (key.toLowerCase() === 'rated') {
+        labels.push('z' + value);
+      } else if (key.toLowerCase() === 'year') {
+        labels.push('zYear:' + value);
+      } else if (key.toLowerCase() === 'duration') {
+        labels.push('zDuration:' + value);
+      } else if (key.toLowerCase() === 'status') {
+        labels.push('z' + value);
+      } else if (key.toLowerCase() === 'country') {
+        labels.push('zCountry:' + value);
+      }
+    });
 
-  lines.forEach(line => {
-    const [key, ...rest] = line.split(':');
-    let value = rest.join(':').trim();
+    const labelString = labels.join(',');
 
-    // Skip if value is 'N/A' (case insensitive)
-    if (value.toUpperCase() === 'N/A') return;
+    function fallbackCopyTextToClipboard(text) {
+      const textArea = document.createElement("textarea");
+      textArea.value = text;
+      textArea.style.position = "fixed";
+      textArea.style.top = "0";
+      textArea.style.left = "0";
+      document.body.appendChild(textArea);
+      textArea.focus();
+      textArea.select();
+      try {
+        const successful = document.execCommand('copy');
+        alert(successful ? 'Blogger labels copied!' : 'Failed to copy labels.');
+      } catch {
+        alert('Failed to copy labels.');
+      }
+      document.body.removeChild(textArea);
+    }
 
-    if (key.toLowerCase() === 'genre') {
-      labels.push(...value.split(',').map(g => g.trim().replace(/\s+/g, '')));
-    } else if (key.toLowerCase() === 'type') {
-      labels.push(value);
-    } else if (key.toLowerCase() === 'rated') {
-      labels.push('z' + value);
-    } else if (key.toLowerCase() === 'year') {
-      labels.push('zYear:' + value);
-    } else if (key.toLowerCase() === 'duration') {
-      labels.push('zDuration:' + value);
-    } else if (key.toLowerCase() === 'status') {
-      labels.push('z' + value);
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(labelString).then(() => {
+        alert('Blogger labels copied!');
+      }).catch(() => {
+        fallbackCopyTextToClipboard(labelString);
+      });
+    } else {
+      fallbackCopyTextToClipboard(labelString);
     }
   });
 
-  const labelString = labels.join(',');
-
-  // Clipboard copy fallback
-  function fallbackCopyTextToClipboard(text) {
-    const textArea = document.createElement("textarea");
-    textArea.value = text;
-    textArea.style.position = "fixed";
-    textArea.style.top = "0";
-    textArea.style.left = "0";
-    textArea.style.width = "2em";
-    textArea.style.height = "2em";
-    textArea.style.padding = "0";
-    textArea.style.border = "none";
-    textArea.style.outline = "none";
-    textArea.style.boxShadow = "none";
-    textArea.style.background = "transparent";
-
-    document.body.appendChild(textArea);
-    textArea.focus();
-    textArea.select();
-
-    try {
-      const successful = document.execCommand('copy');
-      if (successful) alert('Blogger labels copied!');
-      else alert('Failed to copy labels.');
-    } catch {
-      alert('Failed to copy labels.');
-    }
-
-    document.body.removeChild(textArea);
-  }
-
-  if (navigator.clipboard && navigator.clipboard.writeText) {
-    navigator.clipboard.writeText(labelString).then(() => {
-      alert('Blogger labels copied!');
-    }).catch(() => {
-      fallbackCopyTextToClipboard(labelString);
-    });
-  } else {
-    fallbackCopyTextToClipboard(labelString);
-  }
-});
-
-
   document.getElementById('generateBtn').addEventListener('click', generateCode);
 
- async function generateCode() {
-  const generateBtn = document.getElementById('generateBtn');
-  const loadingIndicator = document.getElementById('loadingIndicator');
-
-  // Show loading and disable button
-  loadingIndicator.style.display = 'block';
-  generateBtn.disabled = true;
-
-  try {
-    // Your existing code here
-    const tmdbId = document.getElementById('tmdbId').value.trim();
-    const mediaType = document.querySelector('input[name="contentType"]:checked').value;
-    const tmdbApi = document.getElementById('tmdbKey').value.trim();
-    const tinyApi = document.getElementById('tinyApiKey').value.trim();
-
-    localStorage.setItem('tmdbApiKey', tmdbApi);
-    localStorage.setItem('tinyApiKey', tinyApi);
-
-    if (!tmdbApi) {
-      alert('Please enter your TMDB API key.');
-      return;
+  async function shortenUrl(url, apiKey) {
+    try {
+      const res = await fetch('https://api.tinyurl.com/create', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ url })
+      });
+      const data = await res.json();
+      return data.data?.tiny_url || null;
+    } catch {
+      return null;
     }
+  }
 
-    let poster = '', backdrop = '', desc = '', celebrities = [], genreList = [], rating = '', rated = '', year = '', duration = '', status = '';
+  async function generateCode() {
+    const generateBtn = document.getElementById('generateBtn');
+    const loadingIndicator = document.getElementById('loadingIndicator');
+    loadingIndicator.style.display = 'block';
+    generateBtn.disabled = true;
 
     try {
+      const tmdbId = document.getElementById('tmdbId').value.trim();
+      const mediaType = document.querySelector('input[name="contentType"]:checked').value;
+      const tmdbApi = document.getElementById('tmdbKey').value.trim();
+      const tinyApi = document.getElementById('tinyApiKey').value.trim();
+
+      localStorage.setItem('tmdbApiKey', tmdbApi);
+      localStorage.setItem('tinyApiKey', tinyApi);
+
+      if (!tmdbApi) return alert('Please enter your TMDB API key.');
+
+      let poster = '', backdrop = '', desc = '', celebrities = [], genreList = [], rating = '', rated = '', year = '', duration = '', status = '', country = '';
+
       const res = await fetch(`https://api.themoviedb.org/3/${mediaType}/${tmdbId}?api_key=${tmdbApi}&append_to_response=credits`);
       const data = await res.json();
-      if(data.success === false) {
-        alert('Invalid TMDB ID.');
-        return;
-      }
+      if (data.success === false) return alert('Invalid TMDB ID.');
 
       poster = data.poster_path ? `https://image.tmdb.org/t/p/w500${data.poster_path}` : '';
       backdrop = data.backdrop_path ? `https://image.tmdb.org/t/p/w780${data.backdrop_path}` : '';
@@ -278,48 +270,44 @@
       genreList = (data.genres || []).map(g => g.name);
       rating = data.vote_average ? `${data.vote_average.toFixed(1)}/10` : 'N/A';
 
-      let certification = 'N/A';
-      if(mediaType === 'movie') {
+      rated = 'N/A';
+      if (mediaType === 'movie') {
         const certRes = await fetch(`https://api.themoviedb.org/3/movie/${tmdbId}/release_dates?api_key=${tmdbApi}`);
         const certData = await certRes.json();
         const usCert = certData.results?.find(r => r.iso_3166_1 === 'US');
-        if(usCert?.release_dates?.length) {
-          certification = usCert.release_dates[0].certification || 'N/A';
+        if (usCert?.release_dates?.length) {
+          rated = usCert.release_dates[0].certification || 'N/A';
         }
       } else {
         const certRes = await fetch(`https://api.themoviedb.org/3/tv/${tmdbId}/content_ratings?api_key=${tmdbApi}`);
         const certData = await certRes.json();
         const usCert = certData.results?.find(r => r.iso_3166_1 === 'US');
-        certification = usCert?.rating || 'N/A';
+        rated = usCert?.rating || 'N/A';
       }
-      rated = certification;
 
       year = mediaType === 'movie' ? (data.release_date?.split('-')[0] || 'N/A') : (data.first_air_date?.split('-')[0] || 'N/A');
       duration = mediaType === 'movie'
         ? data.runtime ? `${Math.floor(data.runtime / 60)}h ${data.runtime % 60}min` : 'N/A'
         : data.episode_run_time?.length ? `${Math.floor(data.episode_run_time[0] / 60)}h ${data.episode_run_time[0] % 60}min` : 'N/A';
       status = data.status || 'N/A';
-    } catch {
-      alert('TMDB fetch failed.');
-      return;
-    }
+      country = (data.production_countries?.map(c => c.name).join(', ') || 'N/A');
 
-    let episodes = [];
-    if(mediaType === 'tv') {
-      const count = parseInt(document.getElementById('episodeCount').value);
-      const season = parseInt(document.getElementById('seasonNumber').value);
-      for(let i = 1; i <= count; i++) {
-        const url = `https://player.vidsrc.co/embed/tv/${tmdbId}/${season}/${i}?autoplay=true`;
+      let episodes = [];
+      if (mediaType === 'tv') {
+        const count = parseInt(document.getElementById('episodeCount').value);
+        const season = parseInt(document.getElementById('seasonNumber').value);
+        for (let i = 1; i <= count; i++) {
+          const url = `https://player.vidsrc.co/embed/tv/${tmdbId}/${season}/${i}?autoplay=true`;
+          const shortUrl = await shortenUrl(url, tinyApi);
+          episodes.push({ episode: String(i).padStart(2, '0'), thumb: '', video: shortUrl || url });
+        }
+      } else {
+        const url = `https://player.vidsrc.co/embed/movie/${tmdbId}?autoplay=true`;
         const shortUrl = await shortenUrl(url, tinyApi);
-        episodes.push({ episode: String(i).padStart(2, '0'), thumb: '', video: shortUrl || url });
+        episodes.push({ episode: '01', thumb: '', video: shortUrl || url });
       }
-    } else {
-      const url = `https://player.vidsrc.co/embed/movie/${tmdbId}?autoplay=true`;
-      const shortUrl = await shortenUrl(url, tinyApi);
-      episodes.push({ episode: '01', thumb: '', video: shortUrl || url });
-    }
 
-    const embed = `<div>
+      const embed = `<div>
   <span id="post-id" data-post-id="${tmdbId}"></span>
   <img alt="poster" src="${poster}" />
   <iframe class="lazyloaded" data-src="/" src="/" allowfullscreen="true"></iframe>
@@ -331,44 +319,27 @@
     const celebrities = ${JSON.stringify(celebrities, null, 2)};
   <\/script>
 </div>`;
+      document.getElementById('output').value = embed;
 
-    document.getElementById('output').value = embed;
-
-    const extraInfoText = `Genre: ${genreList.join(', ') || 'N/A'}
+      const extraInfoText = `Genre: ${genreList.join(', ') || 'N/A'}
 Rating: ${rating}
 Type: ${mediaType === 'movie' ? 'Movie' : 'TV Series'}
 Rated: ${rated}
 Year: ${year}
 Duration: ${duration}
-Status: ${status}`;
-    document.getElementById('extraOutput').value = extraInfoText;
+Status: ${status}
+Country: ${country}`;
 
-  } finally {
-    // Hide loading and enable button no matter what
-    loadingIndicator.style.display = 'none';
-    generateBtn.disabled = false;
-  }
-}
+      document.getElementById('extraOutput').value = extraInfoText;
 
-
-
-  async function shortenUrl(longUrl, token) {
-    if (!token) return null;
-    try {
-      const res = await fetch('https://api.tinyurl.com/create', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ url: longUrl })
-      });
-      const data = await res.json();
-      return data.data?.tiny_url || null;
-    } catch {
-      return null;
+    } catch (err) {
+      alert('An error occurred during generation.');
+    } finally {
+      loadingIndicator.style.display = 'none';
+      generateBtn.disabled = false;
     }
   }
 </script>
+
 </body>
 </html>
