@@ -22,6 +22,45 @@
       height: 150px;
       resize: vertical;
     }
+    @media (max-width: 576px) {
+  body {
+    font-size: 0.75rem; 
+  }
+
+  h4 {
+    font-size: 1rem;
+  }
+
+  .form-label,
+  .form-control,
+  .input-group-text,
+  button {
+    font-size: 0.75rem;
+  }
+
+  textarea {
+    font-size: 0.75rem;
+  }
+  .form-control {
+    padding: 0.25rem 0.3rem; 
+    font-size: 0.65rem; 
+  }
+  
+   #generateBtn,
+    #copyBtn,
+    #copyExtraBtn  {
+      font-size: 0.75rem;     
+      padding: 0.25rem 0.5rem; 
+    }
+    
+     #output, #extraOutput {
+      max-height: 180px;
+      height: 100px;
+      resize: vertical;
+    }
+  
+  
+}
   </style>
 </head>
 <body>
@@ -65,7 +104,7 @@
     <div style="width: 50%;">
       <div class="input-group">
         <span class="input-group-text"><i class="bi bi-calendar3"></i></span>
-        <input type="number" class="form-control" id="seasonNumber" placeholder="Season Number" />
+        <input type="number" class="form-control" id="seasonNumber" placeholder="Season No." />
       </div>
     </div>
     <div style="width: 50%;">
@@ -77,19 +116,19 @@
   </div>
 
   <div class="d-flex gap-2 mb-3">
-    <button class="btn btn-primary flex-grow-1" id="generateBtn" onclick="generateCode()">Generate</button>
-    <button class="btn btn-outline-secondary" id="copyBtn">Copy Embed Code</button>
-  </div>
+  <button class="btn btn-primary flex-grow-1" id="generateBtn" onclick="generateCode()">Generate</button>
+  <button class="btn btn-outline-secondary" id="copyBtn">Copy Embed Code</button>
+</div>
 
   <div class="mb-4">
     <label class="form-label">Embed Code</label>
-    <textarea id="output" class="form-control" rows="6" placeholder="Generated embed code will appear here..."></textarea>
+    <textarea id="output" class="form-control" rows="6" ></textarea>
   </div>
 
   <div class="mb-4">
-    <label class="form-label">Extra Info</label>
-    <textarea id="extraOutput" class="form-control" rows="5" placeholder="Extra info like Genre, Rating, etc..." readonly></textarea>
-    <button class="btn btn-outline-secondary mt-2" id="copyExtraBtn">Copy Extra Info</button>
+    <label class="form-label">Additional Information</label>
+    <textarea id="extraOutput" class="form-control" rows="5" readonly></textarea>
+    <button class="btn btn-outline-secondary mt-2" id="copyExtraBtn">Copy Labels</button>
   </div>
 </div>
 
